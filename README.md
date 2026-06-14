@@ -134,6 +134,20 @@ Copy-paste templates live in [templates/adapters/](templates/adapters/). They pr
 
 If the resolver returns `ask`, choose the degree manually or provide stronger task/file/command evidence. If it returns `none`, proceed without a degree or author a new one.
 
+## CLI Usage
+
+The `degrees` CLI wraps the same resolver and installs lightweight invocation glue for supported agents.
+
+```sh
+degrees list .
+degrees use . --task "Fix keyboard navigation in SearchResults.tsx" --file src/components/SearchResults.tsx
+degrees add tomcerdeira/agent-degrees --agent claude-code --global --yes
+```
+
+`degrees add` can install Claude Code, Codex, and Cursor entrypoints such as meta-skills, slash/custom commands, and repo instruction snippets. It asks before overwriting existing files unless `--yes` is passed. It still preserves the v1 advisory model: no hard enforcement, no automatic tool/plugin installation, and no mutation of installed skills beyond explicitly requested adapter files.
+
+See [docs/cli.md](docs/cli.md) for source formats, flags, scopes, and examples.
+
 ## Skill-Like Invocation
 
 To reduce copy-paste, use the lightweight invocation templates in [docs/invocation.md](docs/invocation.md):
@@ -160,10 +174,9 @@ These are examples, not a universal ontology. Real teams should rename skills to
 
 This first version is deliberately spec-first:
 
-- No runtime integration.
-- No installed global CLI or agent plugin.
-- No hidden files.
-- No mutation of installed skills.
+- No full runtime integration or agent plugin.
+- No hidden state beyond explicitly requested adapter files and source cache entries.
+- No mutation of unrelated installed skills.
 - No automatic installation of MCP servers, CLIs, or services.
 - No hard enforcement of exclusions.
 - No claim that one degree must cover every task.
