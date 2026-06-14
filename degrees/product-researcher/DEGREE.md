@@ -52,6 +52,7 @@ activation:
       - [interview, notes]
       - [write, brief]
     anyOf:
+      - onboarding
       - MVP
       - positioning
       - problem framing

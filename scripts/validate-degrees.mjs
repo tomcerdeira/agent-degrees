@@ -80,8 +80,7 @@ function expectStringArray(data, key, filePath, { allowEmpty = false } = {}) {
 }
 
 function parseJsonc(source, filePath) {
-  const withoutBlockComments = source.replace(/\/\*[\s\S]*?\*\//g, "");
-  const withoutLineComments = withoutBlockComments.replace(/^\s*\/\/.*$/gm, "");
+  const withoutLineComments = source.replace(/^\s*\/\/.*$/gm, "");
 
   try {
     return JSON.parse(withoutLineComments);

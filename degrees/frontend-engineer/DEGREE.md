@@ -44,6 +44,7 @@ activation:
       - accessibility
       - keyboard navigation
       - browser verification
+      - settings page
     allOf:
       - [browser, verify]
       - [responsive, layout]

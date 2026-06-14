@@ -31,6 +31,7 @@ recommendedTools:
     when: Use for production behavior, regressions, latency, or incident work.
 activation:
   pathPatterns:
+    - "src/api/**"
     - "src/**/api/**"
     - "src/**/routes/**"
     - "src/**/controllers/**"
@@ -52,6 +53,9 @@ activation:
       - auth
       - permissions
       - rate limit
+      - unit tests
+      - admin
+      - invoice recipients
       - background job
       - production error
     allOf:

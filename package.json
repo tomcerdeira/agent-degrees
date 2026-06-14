@@ -5,7 +5,8 @@
   "description": "Spec-first portable degree profiles for agent skills and tools.",
   "type": "module",
   "scripts": {
-    "validate": "node scripts/validate-degrees.mjs"
+    "validate": "node scripts/validate-degrees.mjs",
+    "check:fixtures": "node scripts/check-resolver-fixtures.mjs"
   },
   "devDependencies": {
     "yaml": "^2.9.0"

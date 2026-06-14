@@ -135,6 +135,7 @@ Run the local validator before changing degree packages:
 
 ```sh
 npm run validate
+npm run check:fixtures
 ```
 
-The validator checks the portable schema JSON, package layout, frontmatter, required fields, duplicate ids, skill ids, recommended tool entries, resolver fixture shape, and non-empty markdown bodies. It is repository hygiene only; it does not resolve tasks or execute recommended tools.
+The validator checks the portable schema JSON, package layout, frontmatter, required fields, duplicate ids, skill ids, recommended tool entries, resolver fixture shape, and non-empty markdown bodies. The fixture check runs an experimental resolver heuristic against the fixture cases to pressure-test activation metadata. It is repository hygiene only; it does not execute recommended tools.
