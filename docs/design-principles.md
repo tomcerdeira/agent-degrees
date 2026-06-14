@@ -6,7 +6,7 @@ Degrees should steer context selection, not police it. A soft exclusion is a rem
 
 ## Portable Before Runtime-Specific
 
-The source format should be useful as plain markdown. Runtime adapters can map degree fields to Cursor, Claude Code, Codex, or prompt-only workflows later, but the degree file should remain readable and useful without those adapters.
+The source format should be useful as plain markdown. Runtime adapters can map degree fields to Cursor, Claude Code, Codex, or prompt-only workflows later, but the degree package should remain readable and useful without those adapters.
 
 ## Small Initial Context
 
@@ -32,7 +32,7 @@ When expanding, the agent should state the reason briefly.
 
 ## Human-Reviewable
 
-The spec should remain easy to review in a pull request. Prefer short degree files, obvious ids, and examples that show behavior rather than a large ontology.
+The spec should remain easy to review in a pull request. Prefer short `DEGREE.md` entrypoints, obvious ids, and examples that show behavior rather than a large ontology.
 
 ## No Universal Taxonomy Yet
 

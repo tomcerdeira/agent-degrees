@@ -26,7 +26,7 @@ Adapters may implement resolution with deterministic heuristics, embeddings, LLM
 A resolver may use these inputs:
 
 - `task`: the user's task text.
-- `degrees`: available `.degree.md` files.
+- `degrees`: available degree packages with `DEGREE.md` entrypoints.
 - `availableSkills`: optional runtime skill ids that can be mapped to `includeSkills`.
 - `availableTools`: optional runtime tools, MCP servers, CLIs, apps, services, or package managers.
 - `repoSignals`: optional file paths, changed files, language/framework hints, tests, logs, traces, or other local evidence.

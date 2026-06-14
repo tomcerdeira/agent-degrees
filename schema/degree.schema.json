@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://agent-degrees.dev/schemas/degree.schema.json",
   "title": "Agent Degree Frontmatter",
-  "description": "Portable metadata schema for the YAML frontmatter of .degree.md files.",
+  "description": "Portable metadata schema for the YAML frontmatter of degree package DEGREE.md files.",
   "type": "object",
   "additionalProperties": false,
   "required": [

@@ -303,29 +303,48 @@ async function main() {
   if (!schema) return finish();
 
   const entries = await readdir(degreesDir, { withFileTypes: true });
-  const degreeFiles = entries
-    .filter((entry) => entry.isFile() && entry.name.endsWith(".degree.md"))
+
+  for (const entry of entries) {
+    if (entry.isFile() && entry.name.endsWith(".degree.md")) {
+      fail(`degrees/${entry.name}: legacy flat degree files are not supported; use degrees/<id>/DEGREE.md`);
+    }
+  }
+
+  const degreePackages = entries
+    .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name)
     .sort();
 
-  if (degreeFiles.length === 0) {
-    fail("degrees/: no .degree.md files found");
+  if (degreePackages.length === 0) {
+    fail("degrees/: no degree packages found; expected degrees/<id>/DEGREE.md");
   }
 
   const seenIds = new Set();
 
-  for (const fileName of degreeFiles) {
-    const filePath = path.join("degrees", fileName);
-    const absolutePath = path.join(degreesDir, fileName);
-    const source = await readFile(absolutePath, "utf8");
+  for (const packageName of degreePackages) {
+    const packagePath = path.join("degrees", packageName);
+    const filePath = path.join(packagePath, "DEGREE.md");
+    const absolutePath = path.join(degreesDir, packageName, "DEGREE.md");
+    let source;
+
+    try {
+      source = await readFile(absolutePath, "utf8");
+    } catch (error) {
+      fail(`${packagePath}: missing DEGREE.md entrypoint`);
+      continue;
+    }
+
     const parts = splitDegreeFile(source, filePath);
     if (!parts) continue;
 
     const data = parseFrontmatterYaml(parts.frontmatter, filePath);
+    if (data.id !== packageName) {
+      fail(`${filePath}: frontmatter id must match package folder name ${packageName}`);
+    }
     validateDegree(data, filePath, schema, seenIds);
   }
 
-  finish(degreeFiles.length);
+  finish(degreePackages.length);
 }
 
 function finish(count = 0) {
@@ -335,7 +354,7 @@ function finish(count = 0) {
     process.exit(1);
   }
 
-  console.log(`Degree validation passed (${count} degree files).`);
+  console.log(`Degree validation passed (${count} degree packages).`);
 }
 
 main().catch((error) => {

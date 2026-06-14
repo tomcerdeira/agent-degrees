@@ -1,8 +1,33 @@
 # Authoring Degrees
 
-Use this guide when adding or editing `.degree.md` files.
+Use this guide when adding or editing degree packages.
 
 Degrees should be small, advisory, and easy to review. A good degree helps an agent start with relevant context. It does not claim ownership of every possible task in a domain.
+
+## Package Layout
+
+A degree is a folder with a `DEGREE.md` entrypoint:
+
+```text
+degrees/
+  frontend-engineer/
+    DEGREE.md
+```
+
+The folder name is the canonical package id and must match the frontmatter `id`.
+
+Future package resources can live beside `DEGREE.md`:
+
+```text
+degrees/
+  frontend-engineer/
+    DEGREE.md
+    references/
+    examples/
+    adapters/
+```
+
+Keep `DEGREE.md` as the required entrypoint. Do not use `SKILL.md`; a degree curates skills but is not itself a skill.
 
 ## Start With the Boundary
 
@@ -15,7 +40,7 @@ If the answer is "almost everything", the degree is too broad.
 
 ## Choose `id` and `name`
 
-Use a stable kebab-case `id`:
+Use a stable kebab-case folder and matching `id`:
 
 ```yaml
 id: frontend-engineer
@@ -34,7 +59,7 @@ Weak ids:
 - `everything-agent`
 - `frontend-vibes`
 
-The id is for adapters and references. The name is for humans.
+The folder and id are for adapters and references. The name is for humans.
 
 ## Write a Specific `description`
 
@@ -222,6 +247,7 @@ npm run validate
 Then check:
 
 - The degree has a clear boundary.
+- The package folder and id match.
 - The id is stable and kebab-case.
 - Included skills are relevant to the initial context.
 - Soft exclusions are advisory and overrideable.
