@@ -1,0 +1,10 @@
+{
+  "name": "agent-degrees",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Spec-first portable degree profiles for agent skills and tools.",
+  "type": "module",
+  "scripts": {
+    "validate": "node scripts/validate-degrees.mjs"
+  }
+}

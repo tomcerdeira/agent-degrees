@@ -103,3 +103,13 @@ Future adapters can translate the same `.degree.md` files into Cursor, Claude Co
 ## Manual Validation
 
 Use [examples/task-resolution.md](examples/task-resolution.md), [examples/composed-degrees.md](examples/composed-degrees.md), and [examples/validation-matrix.md](examples/validation-matrix.md) to test whether a degree makes the initial context smaller and more relevant. The expected v1 outcome is better steering, not perfect classification.
+
+## Repository Validation
+
+Run the local validator before changing degree files:
+
+```sh
+npm run validate
+```
+
+The validator checks the portable schema JSON, degree frontmatter, required fields, duplicate ids, skill ids, recommended tool entries, and non-empty markdown bodies. It is repository hygiene only; it does not resolve tasks or execute recommended tools.
