@@ -62,7 +62,7 @@ Prefer UI, interaction, accessibility, and browser-verification context.
 Only load backend, database, or infrastructure skills when the user explicitly asks or the task directly touches those files.
 ```
 
-The portable schema lives at [schema/degree.schema.json](schema/degree.schema.json). The markdown body is intentionally free-form so each runtime can preserve its natural prompt style.
+The portable schema lives at [schema/degree.schema.json](schema/degree.schema.json). The markdown body is intentionally free-form so each runtime can preserve its natural prompt style. See [docs/authoring-degrees.md](docs/authoring-degrees.md) before adding new degrees.
 
 ## Intended Workflow
 
