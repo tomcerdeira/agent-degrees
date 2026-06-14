@@ -134,6 +134,16 @@ Copy-paste templates live in [templates/adapters/](templates/adapters/). They pr
 
 If the resolver returns `ask`, choose the degree manually or provide stronger task/file/command evidence. If it returns `none`, proceed without a degree or author a new one.
 
+## Skill-Like Invocation
+
+To reduce copy-paste, use the lightweight invocation templates in [docs/invocation.md](docs/invocation.md):
+
+- copy the `agent-degrees` meta-skill into a skill-capable runtime
+- add repo snippets to `AGENTS.md`, `CLAUDE.md`, or Cursor rules
+- create a `/degree <task>` custom command that runs the resolver
+
+These entrypoints make agents check degrees before work without installing an MCP server, mutating runtime configuration, or enforcing degree choices.
+
 ## Example Degrees
 
 This repo includes advisory degree examples:

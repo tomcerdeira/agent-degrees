@@ -14,6 +14,8 @@ Adapters should mirror skill-style progressive disclosure:
 
 Do not concatenate every degree body into the initial prompt. The degree layer should reduce context before the skill layer expands it.
 
+For lightweight invocation without a real runtime adapter, use [invocation.md](invocation.md).
+
 ## Generic Prompt-Only Usage
 
 The built-in prompt-only adapter is:
