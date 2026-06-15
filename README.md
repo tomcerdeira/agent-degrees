@@ -227,7 +227,15 @@ Each store has a local `.disciplines-manifest.json` that records installed ids, 
 
 ## Public Disciplines
 
-This package currently ships the CLI, schema, templates, docs, and resolver. The public `disciplines/` catalog is intentionally empty while the first real discipline is authored.
+This package ships the CLI, schema, templates, docs, and resolver, plus the published disciplines listed in [catalog/disciplines.json](catalog/disciplines.json):
+
+- **`data-observability-engineer`** — querying, operating, and debugging data stores and telemetry: relational, document, graph, cache, and search systems plus logs, traces, and metrics.
+
+Install a published discipline and wire it into Claude Code, Codex, and Cursor in one command:
+
+```sh
+npx disciplines add tomcerdeira/disciplines --discipline data-observability-engineer --agent '*' --global
+```
 
 Use `npx disciplines init <name>` to create a new discipline package, then add it to [catalog/disciplines.json](catalog/disciplines.json) when it is ready to publish.
 

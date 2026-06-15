@@ -1,5 +1,16 @@
 {
   "version": 1,
   "updatedAt": "2026-06-15",
-  "disciplines": []
+  "disciplines": [
+    {
+      "id": "data-observability-engineer",
+      "name": "Data & Observability Engineer",
+      "description": "Focuses agents on querying, operating, and debugging data stores and telemetry — relational, document, graph, cache, and search systems plus logs, traces, and metrics.",
+      "source": "tomcerdeira/disciplines",
+      "discipline": "data-observability-engineer",
+      "tags": ["data", "databases", "observability", "sql", "telemetry"],
+      "agents": ["claude-code", "codex", "cursor"],
+      "tools": ["datadog", "elasticsearch", "mongodb-atlas", "neo4j-cypher", "upstash", "psql"]
+    }
+  ]
 }
