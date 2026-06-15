@@ -9,6 +9,7 @@ disciplines add <source> [--discipline <ids...>|--all] [--agent <agents...>] [--
 disciplines use <source[@discipline]|installed> [--discipline <ids...>] [--task "..."] [--file path] [--command cmd] [--format prompt|json]
 disciplines list|ls [source] [--global|--project]
 disciplines find [query] [--global|--project]
+disciplines check [ids...] [--discipline <ids...>] [--global|--project]
 disciplines remove|rm [ids...] [--discipline <ids...>] [--all] [--global|--project] [--yes]
 disciplines update [ids...] [--discipline <ids...>] [--global|--project] [--yes]
 disciplines init [name]
@@ -100,14 +101,18 @@ disciplines find react
 
 `list` without a source shows installed disciplines. `list <source>` inspects a source without installing. `find` searches installed disciplines by id, name, description, aliases, included skills, and recommended tools.
 
-## Remove and Update
+## Check, Remove, and Update
 
 ```sh
+disciplines check
+disciplines check frontend-engineer --global
 disciplines remove frontend-engineer
 disciplines rm --all --global --yes
 disciplines update
 disciplines update frontend-engineer --project
 ```
+
+`check` fetches git metadata for installed sources and compares each manifest-recorded revision with the latest known source revision. It reports `UPDATE` rows when newer source revisions are available, but it does not relink, recopy, or otherwise mutate installed packages.
 
 `update` refreshes cached git sources and relinks or recopies installed packages based on their manifest entries.
 

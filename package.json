@@ -16,6 +16,7 @@
     "schema",
     "src",
     "templates",
+    "tsconfig.json",
     "README.md"
   ],
   "bin": {
@@ -28,6 +29,7 @@
     "validate": "npm run build --silent && node dist/validate-disciplines.js",
     "check:fixtures": "npm run build --silent && node dist/check-resolver-fixtures.js",
     "check:cli": "npm run build --silent && node dist/check-cli-workflows.js",
+    "check:package": "npm run build --silent && node dist/check-package.js",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

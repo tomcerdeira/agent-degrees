@@ -29,6 +29,7 @@ function usage() {
   disciplines use <source[@discipline]|installed> [--discipline <ids...>] [--task "..."] [--file path] [--command cmd] [--format prompt|json]
   disciplines list|ls [source] [--global|--project]
   disciplines find [query] [--global|--project]
+  disciplines check [ids...] [--discipline <ids...>] [--global|--project]
   disciplines remove|rm [ids...] [--discipline <ids...>] [--all] [--global|--project] [--yes]
   disciplines update [ids...] [--discipline <ids...>] [--global|--project] [--yes]
   disciplines init [name]
@@ -49,6 +50,7 @@ Examples:
   disciplines use installed --task "Fix keyboard navigation" --file src/components/SearchResults.tsx
   disciplines list
   disciplines find frontend
+  disciplines check
   disciplines remove frontend-engineer --project
   disciplines update --all
   disciplines init software-engineer
@@ -466,6 +468,7 @@ function filterDisciplines(disciplines, selection, { defaultAll = true } = {}) {
 async function installDisciplinePackage(discipline, source, sourceInfo, scope, options) {
   const storeRoot = storeRootForScope(scope);
   const target = path.join(disciplineDir(storeRoot), discipline.id);
+  const sourceRev = await gitRevision(sourceInfo.sourceRoot);
 
   if (existsSync(target) && !(await confirmOverwrite(target, options))) {
     console.log(`skip ${target}`);
@@ -486,6 +489,7 @@ async function installDisciplinePackage(discipline, source, sourceInfo, scope, o
     source,
     sourceRoot: sourceInfo.sourceRoot,
     sourcePath: path.relative(sourceInfo.sourceRoot, discipline.absoluteDir),
+    sourceRev,
     mode: options.copy ? "copy" : "symlink",
     installedAt: new Date().toISOString(),
   };
@@ -660,6 +664,39 @@ async function updateGitSource(sourceRoot) {
   await execFileAsync("git", ["-C", sourceRoot, "pull", "--ff-only"]);
 }
 
+async function gitOutput(args) {
+  const { stdout } = await execFileAsync("git", args);
+  return stdout.trim();
+}
+
+async function gitRevision(sourceRoot, ref = "HEAD") {
+  if (!existsSync(path.join(sourceRoot, ".git"))) return null;
+  try {
+    return await gitOutput(["-C", sourceRoot, "rev-parse", ref]);
+  } catch {
+    return null;
+  }
+}
+
+async function fetchGitSource(sourceRoot) {
+  if (!existsSync(path.join(sourceRoot, ".git"))) return false;
+  try {
+    await execFileAsync("git", ["-C", sourceRoot, "fetch", "--quiet"]);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function latestGitRevision(sourceRoot) {
+  const upstream = await gitRevision(sourceRoot, "@{u}");
+  return upstream ?? await gitRevision(sourceRoot);
+}
+
+function shortRevision(revision) {
+  return revision ? revision.slice(0, 7) : "unknown";
+}
+
 async function commandUpdate(args, options) {
   const requested = selectedIdsFromOptions({ ...options, disciplines: [...options.disciplines, ...args] });
   const scopes = selectedScopes(options, { defaultScope: existsSync(path.join(PROJECT_STORE_ROOT, "disciplines")) ? "project" : "global" });
@@ -679,6 +716,8 @@ async function commandUpdate(args, options) {
         await updateGitSource(entry.sourceRoot);
         updatedSources.add(entry.sourceRoot);
       }
+      entry.sourceRev = await gitRevision(entry.sourceRoot);
+      entry.updatedAt = new Date().toISOString();
       if (entry.mode === "copy") {
         await copyDirectory(path.join(entry.sourceRoot, entry.sourcePath), path.join(disciplineDir(storeRoot), id));
         console.log(`update ${scope}\t${id}`);
@@ -700,6 +739,87 @@ async function commandUpdate(args, options) {
     }
     await writeManifest(storeRoot, manifest);
   }
+}
+
+async function commandCheck(args, options) {
+  const requested = selectedIdsFromOptions({ ...options, disciplines: [...options.disciplines, ...args] });
+  const scopes = options.global || options.project
+    ? selectedScopes(options, { defaultScope: "project" })
+    : ["project", "global"];
+  let checked = 0;
+  let updates = 0;
+  let warnings = 0;
+
+  for (const scope of scopes) {
+    const storeRoot = storeRootForScope(scope);
+    const manifest = await readManifest(storeRoot);
+    const manifestIds = Object.keys(manifest.disciplines);
+    const ids = requested === "*" ? manifestIds : requested.length > 0 ? requested : manifestIds;
+
+    if (ids.length === 0) {
+      console.log(`WARN\t${scope}\tno installed disciplines`);
+      warnings += 1;
+      continue;
+    }
+
+    for (const id of ids) {
+      const entry = manifest.disciplines[id];
+      if (!entry) {
+        console.log(`WARN\t${scope}\t${id}\tmissing manifest entry`);
+        warnings += 1;
+        continue;
+      }
+
+      checked += 1;
+
+      const installedPath = path.join(disciplineDir(storeRoot), id);
+      if (!existsSync(installedPath)) {
+        console.log(`WARN\t${scope}\t${id}\tinstalled package missing`);
+        warnings += 1;
+        continue;
+      }
+
+      if (!entry.sourceRoot || !existsSync(entry.sourceRoot)) {
+        console.log(`WARN\t${scope}\t${id}\tsource missing`);
+        warnings += 1;
+        continue;
+      }
+
+      if (!existsSync(path.join(entry.sourceRoot, ".git"))) {
+        console.log(`OK\t${scope}\t${id}\tlocal source`);
+        continue;
+      }
+
+      await fetchGitSource(entry.sourceRoot);
+      const latestRev = await latestGitRevision(entry.sourceRoot);
+      if (!latestRev) {
+        console.log(`WARN\t${scope}\t${id}\tunable to read latest git revision`);
+        warnings += 1;
+        continue;
+      }
+
+      if (!entry.sourceRev) {
+        console.log(`WARN\t${scope}\t${id}\tno recorded revision; run disciplines update ${id}`);
+        warnings += 1;
+        continue;
+      }
+
+      if (entry.sourceRev !== latestRev) {
+        updates += 1;
+        console.log(`UPDATE\t${scope}\t${id}\t${shortRevision(entry.sourceRev)} -> ${shortRevision(latestRev)}`);
+        continue;
+      }
+
+      console.log(`OK\t${scope}\t${id}\tup to date`);
+    }
+  }
+
+  if (updates > 0) {
+    console.log(`check\t${updates} update(s) available; run disciplines update`);
+    return;
+  }
+
+  console.log(`check\t${checked} discipline(s) checked${warnings ? `; ${warnings} warning(s)` : "; all up to date"}`);
 }
 
 async function commandInit(name) {
@@ -959,6 +1079,11 @@ async function main() {
 
   if (command === "remove") {
     await commandRemove(options._, options);
+    return;
+  }
+
+  if (command === "check") {
+    await commandCheck(options._, options);
     return;
   }
 

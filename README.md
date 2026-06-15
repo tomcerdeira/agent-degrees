@@ -96,6 +96,7 @@ Inspect and manage installs:
 ```sh
 npx disciplines list
 npx disciplines find frontend
+npx disciplines check
 npx disciplines update
 npx disciplines remove frontend-engineer
 npx disciplines doctor
@@ -135,6 +136,8 @@ Global installs live in:
 
 `add` uses symlinks by default and `--copy` when you want a copied package. Agent glue can be installed for Claude Code, Codex, and Cursor with `--agent claude-code|codex|cursor|*`.
 
+`check` fetches git metadata for installed sources and reports whether manifest-recorded revisions are current. It does not relink, copy, or mutate installed discipline packages. Run `update` after `check` when updates are available.
+
 `cleanup` removes stale `agent-degrees` files from older installs. Use `--disciplines` only when you also want to remove current installed discipline stores and agent glue.
 
 ## Included Examples
@@ -154,6 +157,7 @@ npm install
 npm run validate
 npm run check:fixtures
 npm run check:cli
+npm run check:package
 ```
 
 Useful local smoke tests:

@@ -40,6 +40,10 @@ async function main() {
   const projectDoctor = await run(["doctor", "--project"], { cwd: projectDir });
   assert(projectDoctor.stdout.includes("OK\tdoctor"), "project doctor did not pass");
 
+  const projectCheck = await run(["check", "--project"], { cwd: projectDir });
+  assert(projectCheck.stdout.includes("project\tfrontend-engineer"), "project check did not include frontend-engineer");
+  assert(projectCheck.stdout.includes("check\t"), "project check did not print summary");
+
   await mkdir(path.join(projectDir, ".claude", "commands"), { recursive: true });
   await mkdir(path.join(projectDir, ".cursor", "rules"), { recursive: true });
   await writeFile(path.join(projectDir, ".claude", "commands", "degree.md"), "old");
@@ -62,6 +66,10 @@ async function main() {
   assert(globalUpdate.stdout.includes("update global\tbackend-engineer"), "global update did not update backend-engineer");
   const globalDoctor = await run(["doctor", "--global"], { env: { HOME: globalHome } });
   assert(globalDoctor.stdout.includes("OK\tdoctor"), "global doctor did not pass");
+
+  const globalCheck = await run(["check", "--global"], { env: { HOME: globalHome } });
+  assert(globalCheck.stdout.includes("global\tbackend-engineer"), "global check did not include backend-engineer");
+  assert(globalCheck.stdout.includes("check\t"), "global check did not print summary");
 
   await mkdir(path.join(globalHome, ".claude", "commands"), { recursive: true });
   await writeFile(path.join(globalHome, ".claude", "commands", "degree.md"), "old");

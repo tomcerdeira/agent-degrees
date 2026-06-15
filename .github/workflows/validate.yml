@@ -32,3 +32,6 @@ jobs:
 
       - name: Check CLI workflows
         run: npm run check:cli
+
+      - name: Check package tarball
+        run: npm run check:package
