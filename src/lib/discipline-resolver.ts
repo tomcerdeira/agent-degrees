@@ -3,11 +3,107 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import YAML from "yaml";
 
-export function stripJsonComments(source) {
+export type ToolKind = "mcp" | "cli" | "browser" | "package-manager" | "runtime" | "service" | "other";
+export type ResolutionDecision = "select" | "compose" | "ask" | "none";
+
+export interface RecommendedTool {
+  id: string;
+  kind: ToolKind;
+  purpose: string;
+  when?: string;
+  optional?: boolean;
+}
+
+export interface PromptSignals {
+  phrases: string[];
+  allOf: string[][];
+  anyOf: string[];
+  noneOf: string[];
+}
+
+export interface DisciplineActivation {
+  pathPatterns: string[];
+  commandPatterns: string[];
+  promptSignals: PromptSignals;
+  minScore: number;
+}
+
+export interface Discipline {
+  id: string;
+  name: string;
+  version: string;
+  description: string;
+  includeSkills: string[];
+  softExcludeSkills: string[];
+  recommendedTools: RecommendedTool[];
+  activation: DisciplineActivation;
+  aliases?: string[];
+  notes?: string;
+  confidenceThreshold?: number;
+  packageId: string;
+  filePath: string;
+  body: string;
+}
+
+export interface ResolverInput {
+  task?: string;
+  repoSignals?: {
+    files?: string[];
+  };
+  commands?: string[];
+}
+
+export interface ActivationMatches {
+  pathPatterns: string[];
+  commandPatterns: string[];
+  promptSignals: string[];
+}
+
+export interface DisciplineScore {
+  disciplineId: string;
+  minScore: number;
+  score: number;
+  matches: ActivationMatches;
+}
+
+export interface DisciplineResolution {
+  decision: ResolutionDecision;
+  primaryDiscipline: string | null;
+  secondaryDiscipline: string | null;
+  scored: DisciplineScore[];
+}
+
+export interface ResolverBundle {
+  decision: ResolutionDecision;
+  task?: string;
+  question?: string;
+  choices?: string[];
+  reason?: string;
+  selectedDisciplines: Array<{
+    id: string;
+    role: "primary" | "secondary";
+    score: number | string;
+    minScore: number | string;
+    reason: string;
+    filePath: string;
+  }>;
+  activationMatches: Array<ActivationMatches & { disciplineId: string }>;
+  includeSkills: string[];
+  recommendedTools: RecommendedTool[];
+  softExcludeSkills: string[];
+  prompts?: Array<{
+    disciplineId: string;
+    body: string;
+  }>;
+  notes?: string[];
+  scores: DisciplineScore[];
+}
+
+export function stripJsonComments(source: string): string {
   return source.replace(/^\s*\/\/.*$/gm, "");
 }
 
-export function splitDisciplineFile(source, filePath) {
+export function splitDisciplineFile(source: string, filePath: string): { frontmatter: string; body: string } {
   if (!source.startsWith("---\n")) {
     throw new Error(`${filePath}: missing opening frontmatter delimiter`);
   }
@@ -23,7 +119,7 @@ export function splitDisciplineFile(source, filePath) {
   };
 }
 
-export async function loadDisciplines(root) {
+export async function loadDisciplines(root: string): Promise<Discipline[]> {
   if (existsSync(path.join(root, "DISCIPLINE.md"))) {
     const packageName = path.basename(root);
     const relativePath = path.join(packageName, "DISCIPLINE.md");
@@ -43,7 +139,7 @@ export async function loadDisciplines(root) {
     .filter((entry) => entry.isDirectory() || entry.isSymbolicLink())
     .map((entry) => entry.name)
     .sort();
-  const disciplines = [];
+  const disciplines: Discipline[] = [];
 
   for (const packageName of packages) {
     const relativePath = path.join("disciplines", packageName, "DISCIPLINE.md");
@@ -61,11 +157,11 @@ export async function loadDisciplines(root) {
   return disciplines;
 }
 
-function escapeRegExp(value) {
+function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function globToRegExp(pattern) {
+function globToRegExp(pattern: string): RegExp {
   let source = "";
 
   for (let index = 0; index < pattern.length; index += 1) {
@@ -85,17 +181,17 @@ function globToRegExp(pattern) {
   return new RegExp(`^${source}$`, "i");
 }
 
-function includesPhrase(text, phrase) {
+function includesPhrase(text: string, phrase: string): boolean {
   return text.toLowerCase().includes(phrase.toLowerCase());
 }
 
-export function scoreDiscipline(input, discipline) {
+export function scoreDiscipline(input: ResolverInput, discipline: Discipline): DisciplineScore {
   const taskText = input.task ?? "";
   const files = input.repoSignals?.files ?? [];
   const commands = input.commands ?? [];
   const activation = discipline.activation;
   const promptSignals = activation.promptSignals;
-  const matches = {
+  const matches: ActivationMatches = {
     pathPatterns: [],
     commandPatterns: [],
     promptSignals: [],
@@ -153,7 +249,7 @@ export function scoreDiscipline(input, discipline) {
   };
 }
 
-export function resolveDisciplines(input, disciplines) {
+export function resolveDisciplines(input: ResolverInput, disciplines: Discipline[]): DisciplineResolution {
   const scored = disciplines
     .map((discipline) => scoreDiscipline(input, discipline))
     .sort((a, b) => b.score - a.score || a.disciplineId.localeCompare(b.disciplineId));
@@ -189,11 +285,11 @@ export function resolveDisciplines(input, disciplines) {
   };
 }
 
-function unique(values: any[]) {
+function unique<T>(values: T[]): T[] {
   return [...new Set(values)];
 }
 
-function selectedDisciplineEntries(resolution, disciplines): any[] {
+function selectedDisciplineEntries(resolution: DisciplineResolution, disciplines: Discipline[]): Discipline[] {
   const byId = new Map(disciplines.map((discipline) => [discipline.id, discipline]));
   return [resolution.primaryDiscipline, resolution.secondaryDiscipline]
     .filter(Boolean)
@@ -201,18 +297,18 @@ function selectedDisciplineEntries(resolution, disciplines): any[] {
     .filter(Boolean);
 }
 
-function disciplineReason(score) {
-  const parts = [];
+function disciplineReason(score: DisciplineScore): string {
+  const parts: string[] = [];
   if (score.matches.pathPatterns.length > 0) parts.push(`paths: ${score.matches.pathPatterns.join(", ")}`);
   if (score.matches.commandPatterns.length > 0) parts.push(`commands: ${score.matches.commandPatterns.join(", ")}`);
   if (score.matches.promptSignals.length > 0) parts.push(`prompt: ${score.matches.promptSignals.join(", ")}`);
   return parts.length > 0 ? parts.join("; ") : "No strong activation signals matched.";
 }
 
-export function createResolverBundle(input, disciplines) {
+export function createResolverBundle(input: ResolverInput, disciplines: Discipline[]): ResolverBundle {
   const resolution = resolveDisciplines(input, disciplines);
   const selectedDisciplines = selectedDisciplineEntries(resolution, disciplines);
-  const scoreByDiscipline: Map<string, any> = new Map(resolution.scored.map((score) => [score.disciplineId, score]));
+  const scoreByDiscipline = new Map<string, DisciplineScore>(resolution.scored.map((score) => [score.disciplineId, score]));
   const includeSkills = unique(selectedDisciplines.flatMap((discipline) => discipline.includeSkills));
   const includeSkillSet = new Set(includeSkills);
   const softExcludeSkills = unique(selectedDisciplines.flatMap((discipline) => discipline.softExcludeSkills))
@@ -288,12 +384,12 @@ export function createResolverBundle(input, disciplines) {
   };
 }
 
-function formatList(values) {
+function formatList(values?: string[]): string {
   if (!values || values.length === 0) return "- none";
   return values.map((value) => `- ${value}`).join("\n");
 }
 
-function formatTools(tools) {
+function formatTools(tools?: RecommendedTool[]): string {
   if (!tools || tools.length === 0) return "- none";
   return tools
     .map((tool) => {
@@ -303,7 +399,7 @@ function formatTools(tools) {
     .join("\n");
 }
 
-export function formatPromptBundle(bundle) {
+export function formatPromptBundle(bundle: ResolverBundle): string {
   if (bundle.decision === "none") {
     return [
       "# Agent Discipline Resolution",

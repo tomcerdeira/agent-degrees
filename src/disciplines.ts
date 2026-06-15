@@ -14,6 +14,7 @@ import {
   formatPromptBundle,
   loadDisciplines,
 } from "./lib/discipline-resolver.js";
+import type { Discipline, ResolverBundle } from "./lib/discipline-resolver.js";
 
 const execFileAsync = promisify(execFile);
 const CLI_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -574,7 +575,7 @@ async function commandFind(query, options) {
   }
 }
 
-function bundleForSelected(task, selected) {
+function bundleForSelected(task, selected: Discipline[]): ResolverBundle {
   const includeSkills = [...new Set(selected.flatMap((discipline) => discipline.includeSkills))];
   const includeSkillSet = new Set(includeSkills);
   return {
