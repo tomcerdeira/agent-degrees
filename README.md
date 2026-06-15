@@ -177,6 +177,8 @@ When `--agent` is omitted, `add` installs only the discipline package and does n
 
 Each store has a local `.disciplines-manifest.json` that records installed ids, source roots, source paths, install mode, and git revisions for update checks. `doctor` validates that manifest and warns when entries no longer have an installed package.
 
+`doctor` also validates project `disciplines.json` and `disciplines-lock.json` when they exist.
+
 `check` fetches git metadata for installed sources and reports whether manifest-recorded revisions are current. It does not relink, copy, or mutate installed discipline packages. Run `update` after `check` when updates are available.
 
 `cleanup` removes stale `agent-degrees` files from older installs. Use `--disciplines` only when you also want to remove current installed discipline stores and agent glue.

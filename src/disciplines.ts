@@ -600,6 +600,20 @@ async function readInstallConfig(configPath) {
   return parsed.data;
 }
 
+async function checkInstallConfig(configPath) {
+  const status = await pathStatus(configPath);
+  if (!status.exists) return 0;
+
+  try {
+    await readInstallConfig(configPath);
+    doctorLine("OK", CONFIG_FILE, configPath);
+    return 0;
+  } catch (error) {
+    doctorLine("FAIL", CONFIG_FILE, error.message);
+    return 1;
+  }
+}
+
 async function readLockfile(lockPath) {
   try {
     const json = JSON.parse(await readFile(lockPath, "utf8"));
@@ -613,6 +627,20 @@ async function readLockfile(lockPath) {
   } catch (error) {
     if (error?.code === "ENOENT") return null;
     throw error;
+  }
+}
+
+async function checkLockfile(lockPath) {
+  const status = await pathStatus(lockPath);
+  if (!status.exists) return 0;
+
+  try {
+    const lockfile = await readLockfile(lockPath);
+    doctorLine("OK", LOCK_FILE, `${lockPath} (${lockfile.disciplines.length} locked)`);
+    return 0;
+  } catch (error) {
+    doctorLine("FAIL", LOCK_FILE, error.message);
+    return 1;
   }
 }
 
@@ -1037,6 +1065,8 @@ async function commandDoctor(options) {
   await checkFile("project CLAUDE.md", path.join(projectRoot(), "CLAUDE.md"), { warnIfMissing: false });
   await checkFile("project /discipline", path.join(projectRoot(), ".claude", "commands", "discipline.md"), { warnIfMissing: false });
   await checkFile("project Cursor rule", path.join(projectRoot(), ".cursor", "rules", "agent-disciplines.mdc"), { warnIfMissing: false });
+  failures += await checkInstallConfig(path.join(projectRoot(), CONFIG_FILE));
+  failures += await checkLockfile(path.join(projectRoot(), LOCK_FILE));
   await checkFile("global Claude skill", path.join(os.homedir(), ".claude", "skills", "agent-disciplines", "SKILL.md"), { warnIfMissing: false });
   await checkFile("global /discipline", path.join(os.homedir(), ".claude", "commands", "discipline.md"), { warnIfMissing: false });
   await checkFile("global Codex skill", path.join(os.homedir(), ".codex", "skills", "agent-disciplines", "SKILL.md"), { warnIfMissing: false });

@@ -113,6 +113,13 @@ async function main() {
   assert(existsSync(lockfilePath), "install did not write disciplines-lock.json");
   const lockfile = JSON.parse(await readFile(lockfilePath, "utf8"));
   assert(lockfile.disciplines.some((entry) => entry.id === "frontend-engineer" && entry.source === root), "lockfile did not record frontend-engineer");
+  const installDoctor = await run(["doctor", "--project"], { cwd: installDir });
+  assert(installDoctor.stdout.includes("OK\tdisciplines.json"), "doctor did not validate disciplines.json");
+  assert(installDoctor.stdout.includes("OK\tdisciplines-lock.json"), "doctor did not validate disciplines-lock.json");
+
+  await writeFile(lockfilePath, JSON.stringify({ version: 1, disciplines: [{ id: 123 }] }, null, 2));
+  const invalidLockDoctor: any = await runFailure(["doctor", "--project"], { cwd: installDir });
+  assert(invalidLockDoctor.stdout.includes("FAIL\tdisciplines-lock.json"), "doctor did not fail invalid lockfile");
 
   const noLockDir = await mkdtemp(path.join(os.tmpdir(), "disciplines-install-no-lock-"));
   await writeFile(path.join(noLockDir, "disciplines.json"), JSON.stringify({

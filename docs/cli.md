@@ -174,7 +174,7 @@ disciplines doctor --project
 disciplines doctor --global
 ```
 
-`doctor` checks project and global discipline stores, manifests, symlinks, resolver health, installed agent glue, and old `agent-degrees` files that may need cleanup. Missing installs are warnings. Broken installed packages are failures.
+`doctor` checks project and global discipline stores, manifests, symlinks, resolver health, project `disciplines.json`, project `disciplines-lock.json`, installed agent glue, and old `agent-degrees` files that may need cleanup. Missing installs are warnings. Broken installed packages, invalid manifests, invalid config, and invalid lockfiles are failures.
 
 ## Cleanup
 
