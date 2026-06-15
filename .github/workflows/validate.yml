@@ -21,8 +21,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Typecheck
+        run: npm run typecheck
+
       - name: Validate disciplines
         run: npm run validate
 
       - name: Check resolver fixtures
         run: npm run check:fixtures
+
+      - name: Check CLI workflows
+        run: npm run check:cli

@@ -159,8 +159,9 @@ npm run check:cli
 Useful local smoke tests:
 
 ```sh
-node scripts/disciplines.mjs list .
-node scripts/disciplines.mjs use . --task "Fix keyboard navigation" --file src/components/SearchResults.tsx
+npm run build
+node dist/disciplines.js list .
+node dist/disciplines.js use . --task "Fix keyboard navigation" --file src/components/SearchResults.tsx
 npm publish --dry-run --access public
 ```
 

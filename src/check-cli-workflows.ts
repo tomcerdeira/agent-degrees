@@ -9,9 +9,9 @@ import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
 const root = process.cwd();
-const cli = path.join(root, "scripts", "disciplines.mjs");
+const cli = path.join(root, "dist", "disciplines.js");
 
-async function run(args, options = {}) {
+async function run(args, options: any = {}) {
   return execFileAsync("node", [cli, ...args], {
     cwd: options.cwd ?? root,
     env: { ...process.env, ...(options.env ?? {}) },

@@ -13,7 +13,7 @@ import {
   createResolverBundle,
   formatPromptBundle,
   loadDisciplines,
-} from "./lib/discipline-resolver.mjs";
+} from "./lib/discipline-resolver.js";
 
 const execFileAsync = promisify(execFile);
 const CLI_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -69,7 +69,7 @@ function takeValues(argv, index, optionName) {
 }
 
 function parseArgs(argv) {
-  const result = { _: [], files: [], commands: [], agents: [], disciplines: [], format: "prompt" };
+  const result: any = { _: [], files: [], commands: [], agents: [], disciplines: [], format: "prompt" };
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
@@ -324,7 +324,7 @@ async function writeManagedFile(filePath, content, options) {
   console.log(`write ${filePath}`);
 }
 
-async function renderTemplate(sourceRoot, relativePath, replacements = {}) {
+async function renderTemplate(sourceRoot, relativePath, replacements: Record<string, string> = {}) {
   const template = await readFile(path.join(sourceRoot, relativePath), "utf8");
   let output = template;
   for (const [key, value] of Object.entries(replacements)) {

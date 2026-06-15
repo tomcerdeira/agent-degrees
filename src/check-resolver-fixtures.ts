@@ -7,7 +7,7 @@ import {
   loadDisciplines,
   resolveDisciplines,
   stripJsonComments,
-} from "./lib/discipline-resolver.mjs";
+} from "./lib/discipline-resolver.js";
 
 const root = process.cwd();
 const resolverCasesPath = path.join(root, "fixtures", "resolver-cases.jsonc");

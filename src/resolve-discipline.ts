@@ -5,7 +5,7 @@ import {
   createResolverBundle,
   formatPromptBundle,
   loadDisciplines,
-} from "./lib/discipline-resolver.mjs";
+} from "./lib/discipline-resolver.js";
 
 function printUsage() {
   console.log(`Usage:
@@ -22,7 +22,7 @@ Options:
 }
 
 function parseArgs(argv) {
-  const args = {
+  const args: any = {
     files: [],
     commands: [],
     format: "prompt",

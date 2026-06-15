@@ -189,11 +189,11 @@ export function resolveDisciplines(input, disciplines) {
   };
 }
 
-function unique(values) {
+function unique(values: any[]) {
   return [...new Set(values)];
 }
 
-function selectedDisciplineEntries(resolution, disciplines) {
+function selectedDisciplineEntries(resolution, disciplines): any[] {
   const byId = new Map(disciplines.map((discipline) => [discipline.id, discipline]));
   return [resolution.primaryDiscipline, resolution.secondaryDiscipline]
     .filter(Boolean)
@@ -212,7 +212,7 @@ function disciplineReason(score) {
 export function createResolverBundle(input, disciplines) {
   const resolution = resolveDisciplines(input, disciplines);
   const selectedDisciplines = selectedDisciplineEntries(resolution, disciplines);
-  const scoreByDiscipline = new Map(resolution.scored.map((score) => [score.disciplineId, score]));
+  const scoreByDiscipline: Map<string, any> = new Map(resolution.scored.map((score) => [score.disciplineId, score]));
   const includeSkills = unique(selectedDisciplines.flatMap((discipline) => discipline.includeSkills));
   const includeSkillSet = new Set(includeSkills);
   const softExcludeSkills = unique(selectedDisciplines.flatMap((discipline) => discipline.softExcludeSkills))

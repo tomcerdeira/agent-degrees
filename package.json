@@ -1,6 +1,6 @@
 {
   "name": "disciplines",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Spec-first portable discipline profiles for agent skills and tools.",
   "type": "module",
   "license": "MIT",
@@ -10,23 +10,31 @@
   },
   "files": [
     "disciplines",
+    "dist",
     "docs",
     "examples",
     "schema",
-    "scripts",
+    "src",
     "templates",
     "README.md"
   ],
   "bin": {
-    "disciplines": "scripts/disciplines.mjs"
+    "disciplines": "dist/disciplines.js"
   },
   "scripts": {
-    "resolve": "node scripts/resolve-discipline.mjs",
-    "validate": "node scripts/validate-disciplines.mjs",
-    "check:fixtures": "node scripts/check-resolver-fixtures.mjs",
-    "check:cli": "node scripts/check-cli-workflows.mjs"
+    "build": "tsc",
+    "prepack": "npm run build",
+    "resolve": "npm run build --silent && node dist/resolve-discipline.js",
+    "validate": "npm run build --silent && node dist/validate-disciplines.js",
+    "check:fixtures": "npm run build --silent && node dist/check-resolver-fixtures.js",
+    "check:cli": "npm run build --silent && node dist/check-cli-workflows.js",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "yaml": "^2.9.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.3",
+    "typescript": "^6.0.3"
   }
 }
