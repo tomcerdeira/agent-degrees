@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { mkdtemp, readFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -40,6 +40,14 @@ async function main() {
   const projectDoctor = await run(["doctor", "--project"], { cwd: projectDir });
   assert(projectDoctor.stdout.includes("OK\tdoctor"), "project doctor did not pass");
 
+  await mkdir(path.join(projectDir, ".claude", "commands"), { recursive: true });
+  await mkdir(path.join(projectDir, ".cursor", "rules"), { recursive: true });
+  await writeFile(path.join(projectDir, ".claude", "commands", "degree.md"), "old");
+  await writeFile(path.join(projectDir, ".cursor", "rules", "agent-degrees.mdc"), "old");
+  const projectCleanup = await run(["cleanup", "--project", "--yes"], { cwd: projectDir });
+  assert(projectCleanup.stdout.includes("remove\told project /degree"), "cleanup did not remove old project /degree");
+  assert(!existsSync(path.join(projectDir, ".claude", "commands", "degree.md")), "old project /degree still exists");
+
   await run(["remove", "frontend-engineer", "--project", "--yes"], { cwd: projectDir });
   const projectListAfterRemove = await run(["list", "--project"], { cwd: projectDir });
   assert(!projectListAfterRemove.stdout.includes("frontend-engineer"), "remove did not delete frontend-engineer");
@@ -54,6 +62,13 @@ async function main() {
   assert(globalUpdate.stdout.includes("update global\tbackend-engineer"), "global update did not update backend-engineer");
   const globalDoctor = await run(["doctor", "--global"], { env: { HOME: globalHome } });
   assert(globalDoctor.stdout.includes("OK\tdoctor"), "global doctor did not pass");
+
+  await mkdir(path.join(globalHome, ".claude", "commands"), { recursive: true });
+  await writeFile(path.join(globalHome, ".claude", "commands", "degree.md"), "old");
+  const globalCleanup = await run(["cleanup", "--global", "--disciplines", "--yes"], { env: { HOME: globalHome } });
+  assert(globalCleanup.stdout.includes("remove\told Claude /degree"), "cleanup did not remove old global /degree");
+  assert(globalCleanup.stdout.includes("remove\tglobal discipline store"), "cleanup did not remove global discipline store");
+  assert(!existsSync(path.join(globalHome, ".agent-disciplines", "disciplines")), "global discipline store still exists");
 
   const initDir = await mkdtemp(path.join(os.tmpdir(), "disciplines-init-"));
   await run(["init", "software-engineer"], { cwd: initDir });

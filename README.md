@@ -99,6 +99,7 @@ npx disciplines find frontend
 npx disciplines update
 npx disciplines remove frontend-engineer
 npx disciplines doctor
+npx disciplines cleanup
 ```
 
 Create a new discipline:
@@ -133,6 +134,8 @@ Global installs live in:
 ```
 
 `add` uses symlinks by default and `--copy` when you want a copied package. Agent glue can be installed for Claude Code, Codex, and Cursor with `--agent claude-code|codex|cursor|*`.
+
+`cleanup` removes stale `agent-degrees` files from older installs. Use `--disciplines` only when you also want to remove current installed discipline stores and agent glue.
 
 ## Included Examples
 

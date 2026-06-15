@@ -13,6 +13,7 @@ disciplines remove|rm [ids...] [--discipline <ids...>] [--all] [--global|--proje
 disciplines update [ids...] [--discipline <ids...>] [--global|--project] [--yes]
 disciplines init [name]
 disciplines doctor [--global|--project]
+disciplines cleanup [--global|--project] [--disciplines] [--all] [--yes]
 ```
 
 ## Source Formats
@@ -127,3 +128,14 @@ disciplines doctor --global
 ```
 
 `doctor` checks project and global discipline stores, manifests, symlinks, resolver health, installed agent glue, and old `agent-degrees` files that may need cleanup. Missing installs are warnings. Broken installed packages are failures.
+
+## Cleanup
+
+```sh
+disciplines cleanup
+disciplines cleanup --global --yes
+disciplines cleanup --project --yes
+disciplines cleanup --global --disciplines --yes
+```
+
+`cleanup` removes stale `agent-degrees` artifacts from older installs, such as `/degree`, `agent-degrees` skills, and old Cursor rules. By default it does not remove current `agent-disciplines` installs. Add `--disciplines` or `--all` when you also want to remove current discipline stores, manifests, source cache entries, and installed agent glue.

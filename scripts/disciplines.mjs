@@ -33,6 +33,7 @@ function usage() {
   disciplines update [ids...] [--discipline <ids...>] [--global|--project] [--yes]
   disciplines init [name]
   disciplines doctor [--global|--project]
+  disciplines cleanup [--global|--project] [--disciplines] [--all] [--yes]
 
 Sources:
   tomcerdeira/agent-disciplines
@@ -52,6 +53,7 @@ Examples:
   disciplines update --all
   disciplines init software-engineer
   disciplines doctor
+  disciplines cleanup --yes
 `);
 }
 
@@ -135,6 +137,10 @@ function parseArgs(argv) {
     }
     if (arg === "--all") {
       result.all = true;
+      continue;
+    }
+    if (arg === "--disciplines") {
+      result.cleanDisciplines = true;
       continue;
     }
     if (arg.startsWith("--")) throw new Error(`Unknown option: ${arg}`);
@@ -841,6 +847,82 @@ async function commandDoctor(options) {
   doctorLine("OK", "doctor", "no blocking issues found");
 }
 
+function cleanupTargetsForScope(scope, { includeCurrent = false } = {}) {
+  const targets = [];
+
+  if (scope === "global") {
+    targets.push(
+      { label: "old Claude /degree", path: path.join(os.homedir(), ".claude", "commands", "degree.md") },
+      { label: "old Claude skill", path: path.join(os.homedir(), ".claude", "skills", "agent-degrees") },
+      { label: "old Claude alias skill", path: path.join(os.homedir(), ".claude", "skills", "degree") },
+      { label: "old Codex skill", path: path.join(os.homedir(), ".codex", "skills", "agent-degrees") },
+      { label: "old agents skill", path: path.join(os.homedir(), ".agents", "skills", "agent-degrees") },
+      { label: "old Cursor rule", path: path.join(os.homedir(), ".cursor", "rules", "agent-degrees.mdc") },
+    );
+
+    if (includeCurrent) {
+      targets.push(
+        { label: "global discipline store", path: disciplineDir(GLOBAL_STORE_ROOT) },
+        { label: "global discipline manifest", path: manifestPath(GLOBAL_STORE_ROOT) },
+        { label: "global source cache", path: SOURCE_STORE_DIR },
+        { label: "global Claude discipline skill", path: path.join(os.homedir(), ".claude", "skills", "agent-disciplines") },
+        { label: "global Claude /discipline", path: path.join(os.homedir(), ".claude", "commands", "discipline.md") },
+        { label: "global Codex discipline skill", path: path.join(os.homedir(), ".codex", "skills", "agent-disciplines") },
+        { label: "global agents discipline skill", path: path.join(os.homedir(), ".agents", "skills", "agent-disciplines") },
+        { label: "global Cursor discipline rule", path: path.join(os.homedir(), ".cursor", "rules", "agent-disciplines.mdc") },
+      );
+    }
+  }
+
+  if (scope === "project") {
+    targets.push(
+      { label: "old project /degree", path: path.join(projectRoot(), ".claude", "commands", "degree.md") },
+      { label: "old project Cursor rule", path: path.join(projectRoot(), ".cursor", "rules", "agent-degrees.mdc") },
+    );
+
+    if (includeCurrent) {
+      targets.push(
+        { label: "project discipline store", path: disciplineDir(PROJECT_STORE_ROOT) },
+        { label: "project discipline manifest", path: manifestPath(PROJECT_STORE_ROOT) },
+        { label: "project /discipline", path: path.join(projectRoot(), ".claude", "commands", "discipline.md") },
+        { label: "project Cursor discipline rule", path: path.join(projectRoot(), ".cursor", "rules", "agent-disciplines.mdc") },
+      );
+    }
+  }
+
+  return targets;
+}
+
+async function removeTarget(target, options) {
+  if (!existsSync(target.path)) {
+    console.log(`missing\t${target.label}\t${target.path}`);
+    return false;
+  }
+  if (!(await confirmOverwrite(target.path, options))) {
+    console.log(`skip\t${target.label}\t${target.path}`);
+    return false;
+  }
+  await rm(target.path, { recursive: true, force: true });
+  console.log(`remove\t${target.label}\t${target.path}`);
+  return true;
+}
+
+async function commandCleanup(options) {
+  const scopes = options.global || options.project
+    ? selectedScopes(options, { defaultScope: "project" })
+    : ["project", "global"];
+  const targets = scopes.flatMap((scope) => cleanupTargetsForScope(scope, {
+    includeCurrent: options.cleanDisciplines || options.all,
+  }));
+  let removed = 0;
+
+  for (const target of targets) {
+    if (await removeTarget(target, options)) removed += 1;
+  }
+
+  console.log(`cleanup\tremoved ${removed} item(s)`);
+}
+
 async function main() {
   const [rawCommand, ...rest] = process.argv.slice(2);
   const command = rawCommand === "ls" ? "list" : rawCommand === "rm" ? "remove" : rawCommand;
@@ -892,6 +974,11 @@ async function main() {
 
   if (command === "doctor") {
     await commandDoctor(options);
+    return;
+  }
+
+  if (command === "cleanup") {
+    await commandCleanup(options);
     return;
   }
 
