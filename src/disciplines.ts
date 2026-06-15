@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { cp, lstat, mkdir, mkdtemp, readFile, readlink, rm, symlink, writeFile } from "node:fs/promises";
-import { existsSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import process from "node:process";
@@ -636,6 +636,29 @@ function bundleForSelected(task, selected: Discipline[]): ResolverBundle {
   };
 }
 
+function pluginSkillProbePaths(skillId) {
+  // Claude Code plugin skills use a "<plugin>:<skill>" id and live under the plugins
+  // marketplace tree rather than the flat ~/.claude/skills directory.
+  const separator = skillId.indexOf(":");
+  if (separator === -1) return [];
+  const plugin = skillId.slice(0, separator);
+  const skill = skillId.slice(separator + 1);
+  if (!plugin || !skill) return [];
+
+  const marketplacesRoot = path.join(os.homedir(), ".claude", "plugins", "marketplaces");
+  const candidates = [path.join(marketplacesRoot, plugin, "skills", skill, "SKILL.md")];
+
+  // The marketplace directory name is not guaranteed to match the plugin name, so scan
+  // installed marketplaces for the skill as a fallback.
+  if (existsSync(marketplacesRoot)) {
+    for (const entry of readdirSync(marketplacesRoot, { withFileTypes: true })) {
+      if (!entry.isDirectory() && !entry.isSymbolicLink()) continue;
+      candidates.push(path.join(marketplacesRoot, entry.name, "skills", skill, "SKILL.md"));
+    }
+  }
+  return candidates;
+}
+
 function skillProbePaths(skillId, agent = "*") {
   const home = os.homedir();
   const paths = [];
@@ -648,6 +671,7 @@ function skillProbePaths(skillId, agent = "*") {
   }
   if (agents.includes("claude-code")) {
     paths.push(path.join(home, ".claude", "skills", skillId, "SKILL.md"));
+    paths.push(...pluginSkillProbePaths(skillId));
   }
   return [...new Set(paths)];
 }
@@ -697,7 +721,64 @@ async function detectPackageManager() {
   return { id: "package-manager", kind: "tool", status: "missing", detail: "No npm, pnpm, yarn, or bun executable found." };
 }
 
-async function detectTool(tool) {
+function readJsonSafe(filePath) {
+  try {
+    if (!existsSync(filePath)) return null;
+    return JSON.parse(readFileSync(filePath, "utf8"));
+  } catch {
+    return null;
+  }
+}
+
+function mcpConfigLocations(agent = "*") {
+  const home = os.homedir();
+  const cwd = process.cwd();
+  const agents = agent === "*" ? AGENTS : [agent];
+  const locations = [];
+  if (agents.includes("claude-code")) {
+    locations.push({ kind: "json", label: "Claude Code (~/.claude.json)", path: path.join(home, ".claude.json"), key: "mcpServers" });
+    locations.push({ kind: "json", label: "Claude Code project (.mcp.json)", path: path.join(cwd, ".mcp.json"), key: "mcpServers" });
+  }
+  if (agents.includes("cursor")) {
+    locations.push({ kind: "json", label: "Cursor (~/.cursor/mcp.json)", path: path.join(home, ".cursor", "mcp.json"), key: "mcpServers" });
+    locations.push({ kind: "json", label: "Cursor project (.cursor/mcp.json)", path: path.join(cwd, ".cursor", "mcp.json"), key: "mcpServers" });
+  }
+  if (agents.includes("codex")) {
+    locations.push({ kind: "toml", label: "Codex (~/.codex/config.toml)", path: path.join(home, ".codex", "config.toml") });
+  }
+  return locations;
+}
+
+function mcpServerConfiguredIn(location, serverId) {
+  if (!existsSync(location.path)) return false;
+  if (location.kind === "json") {
+    const servers = readJsonSafe(location.path)?.[location.key];
+    return Boolean(servers && typeof servers === "object" && Object.prototype.hasOwnProperty.call(servers, serverId));
+  }
+  if (location.kind === "toml") {
+    let text;
+    try {
+      text = readFileSync(location.path, "utf8");
+    } catch {
+      return false;
+    }
+    const escaped = serverId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return new RegExp(`^\\s*\\[mcp_servers\\.(?:"?${escaped}"?)\\]`, "m").test(text);
+  }
+  return false;
+}
+
+function detectMcpServer(serverId, agent = "*") {
+  const found = mcpConfigLocations(agent)
+    .filter((location) => mcpServerConfiguredIn(location, serverId))
+    .map((location) => location.label);
+  if (found.length === 0) {
+    return { status: "unknown", detail: "mcp not found in known MCP config(s); availability is runtime-specific, so ask the user before installing or configuring it." };
+  }
+  return { status: "ok", detail: `configured in ${found.join(", ")}` };
+}
+
+async function detectTool(tool, agent = "*") {
   if (tool.kind === "package-manager" || tool.id === "package-manager") return detectPackageManager();
   if (tool.kind === "cli" || tool.kind === "runtime") {
     const found = await commandExists(tool.id);
@@ -708,6 +789,10 @@ async function detectTool(tool) {
       detail: found ? `${tool.id} is on PATH` : `${tool.id} is not on PATH`,
       purpose: tool.purpose,
     };
+  }
+  if (tool.kind === "mcp") {
+    const { status, detail } = detectMcpServer(tool.id, agent);
+    return { id: tool.id, kind: "tool", status, detail, purpose: tool.purpose };
   }
   if (tool.kind === "browser" && (await commandExists("npx") || await commandExists("open"))) {
     return { id: tool.id, kind: "tool", status: "ok", detail: "Browser access may be available through local runtime commands.", purpose: tool.purpose };
@@ -726,7 +811,7 @@ async function readinessForBundle(bundle: ResolverBundle, options) {
   const hintBySkill = new Map((bundle.skillInstallHints ?? []).map((hint) => [hint.id, hint]));
   const skills = bundle.includeSkills.map((skillId) => detectSkill(skillId, agent, hintBySkill.get(skillId)));
   const tools = [];
-  for (const tool of bundle.recommendedTools) tools.push(await detectTool(tool));
+  for (const tool of bundle.recommendedTools) tools.push(await detectTool(tool, agent));
   return { agent, skills, tools };
 }
 
