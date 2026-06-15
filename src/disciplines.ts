@@ -151,7 +151,8 @@ async function ensureGitSource(source, revision = null) {
   const remote = parseRemoteSource(source);
   if (!remote) return null;
 
-  const target = path.join(SOURCE_STORE_DIR, remote.slug);
+  const targetSlug = revision ? `${remote.slug}-${revision.slice(0, 12)}` : remote.slug;
+  const target = path.join(SOURCE_STORE_DIR, targetSlug);
   if (!existsSync(target)) {
     await mkdir(SOURCE_STORE_DIR, { recursive: true });
     const args = ["clone"];
